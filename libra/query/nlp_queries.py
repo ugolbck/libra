@@ -8,6 +8,7 @@ from colorama import Fore, Style
 from keras_preprocessing import sequence
 from pandas.core.common import SettingWithCopyWarning
 from sklearn.model_selection import train_test_split
+from simpletransformers import QuestionAnswering
 from tensorflow.python.keras.callbacks import EarlyStopping
 from transformers import TFT5ForConditionalGeneration, T5Tokenizer, \
     pipeline, AutoTokenizer, TFAutoModel
@@ -113,7 +114,8 @@ def text_classification_query(self, instruction, drop=None,
             "data)")
 
     if epochs < 1:
-        raise Exception("Epoch number is less than 1 (model will not be trained)")
+        raise Exception(
+            "Epoch number is less than 1 (model will not be trained)")
 
     if batch_size < 1:
         raise Exception("Batch size must be equal to or greater than 1")
@@ -189,13 +191,15 @@ def text_classification_query(self, instruction, drop=None,
                         batch_size=batch_size,
                         epochs=epochs, callbacks=[es], verbose=0)
 
-    logger("->", "Final training loss: {}".format(history.history["loss"][len(history.history["loss"]) - 1]))
+    logger("->", "Final training loss: {}".format(
+        history.history["loss"][len(history.history["loss"]) - 1]))
     if testing:
         logger("->",
                "Final validation loss: {}".format(history.history["val_loss"][len(history.history["val_loss"]) - 1]))
         logger("->", "Final validation accuracy: {}".format(
             history.history["val_accuracy"][len(history.history["val_accuracy"]) - 1]))
-        losses = {'training_loss': history.history['loss'], 'val_loss': history.history['val_loss']}
+        losses = {
+            'training_loss': history.history['loss'], 'val_loss': history.history['val_loss']}
         accuracy = {'training_accuracy': history.history['accuracy'],
                     'validation_accuracy': history.history['val_accuracy']}
     else:
@@ -240,7 +244,8 @@ def get_summary(self, text, max_summary_length=50, num_beams=4, no_repeat_ngram_
     text = [text]
     text = add_prefix(text, "summarize: ")
     result = model.generate(
-        tf.convert_to_tensor(tokenize_for_input_ids(text, tokenizer, max_length=modelInfo['max_text_length'])),
+        tf.convert_to_tensor(tokenize_for_input_ids(
+            text, tokenizer, max_length=modelInfo['max_text_length'])),
         max_length=max_summary_length, num_beams=num_beams,
         no_repeat_ngram_size=no_repeat_ngram_size, num_return_sequences=num_return_sequences,
         early_stopping=early_stopping)
@@ -278,7 +283,8 @@ def summarization_query(self, instruction, preprocess=True, label_column=None,
         raise Exception("Text and summary must be at least of length 2")
 
     if epochs < 1:
-        raise Exception("Epoch number is less than 1 (model will not be trained)")
+        raise Exception(
+            "Epoch number is less than 1 (model will not be trained)")
 
     if batch_size < 1:
         raise Exception("Batch size must be equal to or greater than 1")
@@ -344,16 +350,19 @@ def summarization_query(self, instruction, preprocess=True, label_column=None,
 
     # Suppress unnecessary output
     with NoStdStreams():
-        model = TFT5ForConditionalGeneration.from_pretrained("t5-small", output_loading_info=False)
+        model = TFT5ForConditionalGeneration.from_pretrained(
+            "t5-small", output_loading_info=False)
 
     if testing:
         X_train, X_test, y_train, y_test = train_test_split(
             X, Y, test_size=test_size, random_state=random_state)
-        test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).shuffle(10000).batch(batch_size)
+        test_dataset = tf.data.Dataset.from_tensor_slices(
+            (X_test, y_test)).shuffle(10000).batch(batch_size)
     else:
         X_train = X
         y_train = Y
-    train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(10000).batch(batch_size)
+    train_dataset = tf.data.Dataset.from_tensor_slices(
+        (X_train, y_train)).shuffle(10000).batch(batch_size)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -372,23 +381,27 @@ def summarization_query(self, instruction, preprocess=True, label_column=None,
                     loss_value = loss(truth, out[0])
                     total_loss += loss_value
                     grads = tape.gradient(loss_value, model.trainable_weights)
-                    optimizer.apply_gradients(zip(grads, model.trainable_weights))
+                    optimizer.apply_gradients(
+                        zip(grads, model.trainable_weights))
 
             total_training_loss.append(total_loss)
 
             # Validation Loop
             if testing:
                 for data, truth in test_dataset:
-                    logits = model(inputs=data, decoder_input_ids=data, training=False)
+                    logits = model(
+                        inputs=data, decoder_input_ids=data, training=False)
                     val_loss = loss(truth, logits[0])
                     total_loss_val += val_loss
 
                 total_validation_loss.append(total_loss_val)
 
-    logger("->", "Final training loss: {}".format(str(total_training_loss[len(total_training_loss) - 1].numpy())))
+    logger("->", "Final training loss: {}".format(
+        str(total_training_loss[len(total_training_loss) - 1].numpy())))
 
     if testing:
-        total_loss_val_str = str(total_validation_loss[len(total_validation_loss) - 1].numpy())
+        total_loss_val_str = str(
+            total_validation_loss[len(total_validation_loss) - 1].numpy())
     else:
         total_loss_val = [0]
         total_loss_val_str = str("0, No validation done")
@@ -399,12 +412,14 @@ def summarization_query(self, instruction, preprocess=True, label_column=None,
         losses = {"Training loss": total_training_loss[len(total_training_loss) - 1].numpy(),
                   "Validation loss": total_validation_loss[len(total_validation_loss) - 1].numpy()}
     else:
-        losses = {"Training loss": total_training_loss[len(total_training_loss) - 1].numpy()}
+        losses = {"Training loss": total_training_loss[len(
+            total_training_loss) - 1].numpy()}
 
     plots = None
     if generate_plots:
         logger("Generating plots")
-        plots = {"loss": libra.plotting.nonkeras_generate_plots.plot_loss(total_training_loss, total_validation_loss)}
+        plots = {"loss": libra.plotting.nonkeras_generate_plots.plot_loss(
+            total_training_loss, total_validation_loss)}
 
     if save_model:
         logger("Saving model")
@@ -484,13 +499,15 @@ def image_caption_query(self, instruction, label_column=None,
         raise Exception("Buffer size must be equal to or greater than 1")
 
     if embedding_dim < 1:
-        raise Exception("Embedding dimension must be equal to or greater than 1")
+        raise Exception(
+            "Embedding dimension must be equal to or greater than 1")
 
     if units < 1:
         raise Exception("Units must be equal to or greater than 1")
 
     if epochs < 1:
-        raise Exception("Epoch number is less than 1 (model will not be trained)")
+        raise Exception(
+            "Epoch number is less than 1 (model will not be trained)")
 
     if save_model_decoder:
         if not os.path.exists(save_path_decoder):
@@ -593,7 +610,7 @@ def image_caption_query(self, instruction, label_column=None,
 
     dataset = dataset.map(lambda item1, item2: tf.numpy_function(
         map_func, [item1, item2], [tf.float32, tf.int32]),
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     # Shuffle and batch
     logger("Shuffling dataset")
@@ -601,11 +618,12 @@ def image_caption_query(self, instruction, label_column=None,
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     if testing:
-        dataset_val = tf.data.Dataset.from_tensor_slices((img_name_val, cap_val))
+        dataset_val = tf.data.Dataset.from_tensor_slices(
+            (img_name_val, cap_val))
 
         dataset_val = dataset_val.map(lambda item1, item2: tf.numpy_function(
             map_func, [item1, item2], [tf.float32, tf.int32]),
-                                      num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         # Shuffle and batch
         dataset_val = dataset_val.shuffle(buffer_size).batch(batch_size)
@@ -646,7 +664,8 @@ def image_caption_query(self, instruction, label_column=None,
 
                 for i in range(1, target.shape[1]):
                     # passing the features through the decoder
-                    predictions, hidden, _ = decoder(dec_input, features, hidden)
+                    predictions, hidden, _ = decoder(
+                        dec_input, features, hidden)
 
                     loss += loss_function(target[:, i], predictions)
 
@@ -680,7 +699,8 @@ def image_caption_query(self, instruction, label_column=None,
 
                 for i in range(1, target.shape[1]):
                     # passing the features through the decoder
-                    predictions, hidden, _ = decoder(dec_input, features, hidden)
+                    predictions, hidden, _ = decoder(
+                        dec_input, features, hidden)
 
                     loss += loss_function(target[:, i], predictions)
 
@@ -721,7 +741,8 @@ def image_caption_query(self, instruction, label_column=None,
     plots = {}
     if generate_plots:
         logger("Generating plots")
-        plots.update({"loss": libra.plotting.nonkeras_generate_plots.plot_loss(loss_plot_train, loss_plot_val)})
+        plots.update({"loss": libra.plotting.nonkeras_generate_plots.plot_loss(
+            loss_plot_train, loss_plot_val)})
 
     logger("->", "Final training loss: {}".format(str(total_loss.numpy())))
     total_loss = total_loss.numpy()
@@ -776,12 +797,15 @@ def get_ner(self, instruction):
     data['combined_text_for_ner'] = data[target].apply(
         lambda x: ' '.join([word for word in x.split() if word not in stopwords.words()]))
 
-    logger("Detecting Name Entities from : {} data files".format(data.shape[0]+1))
+    logger("Detecting Name Entities from : {} data files".format(
+        data.shape[0]+1))
 
     # Named entity recognition pipeline, default model selection
     with NoStdStreams():
-        hugging_face_ner_detector = pipeline('ner', grouped_entities=True, framework='tf')
-        data['ner'] = data['combined_text_for_ner'].apply(lambda x: hugging_face_ner_detector(x))
+        hugging_face_ner_detector = pipeline(
+            'ner', grouped_entities=True, framework='tf')
+        data['ner'] = data['combined_text_for_ner'].apply(
+            lambda x: hugging_face_ner_detector(x))
     logger("NER detection status complete")
     logger("Storing information in client object under key 'named_entity_recognition'")
 
@@ -793,3 +817,12 @@ def get_ner(self, instruction):
     logger("Output: ", data['ner'].to_dict())
     clearLog()
     return self.models["named_entity_recognition"]
+
+
+def question_answering_query(learning_rate=3e-5, num_train_epochs=2, max_seq_length=384,
+                             doc_stride=128,
+                             overwrite_output_dir=True,
+                             reprocess_input_data=False,
+                             train_batch_size=2,
+                             gradient_accumulation_steps=8,
+                             )
