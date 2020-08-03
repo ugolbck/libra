@@ -1064,6 +1064,9 @@ class client:
     # Question Answering Query
     def question_answering_query(self, instruction):
         self.models["question_answering"] = question_answering_query(self, instruction=instruction)
+        self.latest_model = "question_answering"
+        clearLog()
+
 
     # shows the names of plots associated with a specific model
     def plot_names(self, model=None):
