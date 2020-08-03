@@ -822,6 +822,7 @@ def get_ner(self, instruction):
 
 def question_answering_query(output_dir = 'outputs/',
                              cache_dir = 'cache_dir/',
+                             fp16=True,
                              fp16_opt_level = 'O1',
                              max_seq_length = 512,
                              train_batch_size = 8,
@@ -847,5 +848,42 @@ def question_answering_query(output_dir = 'outputs/',
                              n_best_size = 20,
                              max_answer_length = 100,
                              null_score_diff_threshold=0.0):
+    training_args = {
+        'output_dir': output_dir,
+        'cache_dir': cache_dir,
+
+        'fp16': fp16,
+        'fp16_opt_level': fp16_opt_level,
+        'max_seq_length': max_seq_length,
+        'train_batch_size': train_batch_size,
+        'gradient_accumulation_steps': gradient_accumulation_steps,
+        'eval_batch_size': eval_batch_size,
+        'num_train_epochs': num_train_epochs,
+        'weight_decay': weight_decay,
+        'learning_rate': learning_rate,
+        'adam_epsilon': adam_epsilon,
+        'warmup_ratio': warmup_ratio,
+        'warmup_steps': warmup_steps,
+        'max_grad_norm': max_grad_norm,
+
+        'logging_steps': logging_steps,
+        'save_steps': save_steps,
+        'evaluate_during_training': evaluate_during_training,
+
+        'overwrite_output_dir': overwrite_output_dir,
+        'reprocess_input_data': reprocess_input_data,
+
+        'process_count': process_count,
+        'n_gpu': n_gpu,
+        'silent': silent,
+
+        'doc_stride': doc_stride,
+        'max_query_length': max_query_length,
+        'n_best_size': n_best_size,
+        'max_answer_length': max_answer_length,
+        'null_score_diff_threshold': null_score_diff_threshold
+    }
+
+
     pass
 
