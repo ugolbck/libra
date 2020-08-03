@@ -35,7 +35,8 @@ setuptools.setup(
                       'opencv-python',
                       'nltk',
                       'xgboost',
-                      'download'],
+                      'download',
+                      'json'],
     packages=find_packages(exclude=('tests',)),
     classifiers=[
         "Programming Language :: Python :: 3",

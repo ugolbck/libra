@@ -8,7 +8,7 @@ from colorama import Fore, Style
 from keras_preprocessing import sequence
 from pandas.core.common import SettingWithCopyWarning
 from sklearn.model_selection import train_test_split
-from simpletransformers import QuestionAnswering
+from simpletransformers import QuestionAnsweringModel
 from tensorflow.python.keras.callbacks import EarlyStopping
 from transformers import TFT5ForConditionalGeneration, T5Tokenizer, \
     pipeline, AutoTokenizer, TFAutoModel
@@ -23,6 +23,7 @@ from libra.preprocessing.data_reader import DataReader
 from libra.preprocessing.image_caption_helpers import load_image, map_func, CNN_Encoder, RNN_Decoder, get_path_column, \
     generate_caption_helper
 from libra.query.supplementaries import save
+import json
 
 counter = 0
 
@@ -820,7 +821,9 @@ def get_ner(self, instruction):
     return self.models["named_entity_recognition"]
 
 
-def question_answering_query(output_dir = 'outputs/',
+def question_answering_query(self, instruction,
+                             use_cuda=False,
+                             output_dir = 'outputs/',
                              cache_dir = 'cache_dir/',
                              fp16=True,
                              fp16_opt_level = 'O1',
@@ -848,6 +851,11 @@ def question_answering_query(output_dir = 'outputs/',
                              n_best_size = 20,
                              max_answer_length = 100,
                              null_score_diff_threshold=0.0):
+    logger("Loading data")
+    data = DataReader(self.dataset)
+    train_data = [item for topic in data['data'] for item in topic['paragraphs']]
+
+    logger("Initializing training args")
     training_args = {
         'output_dir': output_dir,
         'cache_dir': cache_dir,
@@ -884,6 +892,17 @@ def question_answering_query(output_dir = 'outputs/',
         'null_score_diff_threshold': null_score_diff_threshold
     }
 
+    logger("Downloading pre-trained model")
+    model = QuestionAnsweringModel('distilbert', 'distilbert-base-cased-distilled-squad', args=training_args,use_cuda=True)
 
-    pass
+    logger("Fine tuning model on dataset")
+    model.train_model(train_data)
 
+    logger("Fine tuning complete")
+    self.models["question_answering"] = {
+        "model": model.model,
+        "tokenizer": model.tokenizer,
+        "args": model.args}
+
+    clearLog()
+    return self.models["question_answering"]
