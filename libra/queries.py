@@ -1,7 +1,7 @@
 from libra.query.nlp_queries import (image_caption_query,
                                      generate_caption, classify_text,
                                      text_classification_query, get_summary,
-                                     summarization_query,get_ner)
+                                     summarization_query,get_ner,question_answering_query)
 from libra.query.classification_models import (k_means_clustering,
                                                train_svm, nearest_neighbors,
                                                decision_tree, train_xgboost)
@@ -1059,6 +1059,11 @@ class client:
         self.models["named_entity_recognition"] = get_ner(self, instruction=instruction)
         self.latest_model = "named_entity_recognition"
         clearLog()
+
+
+    # Question Answering Query
+    def question_answering_query(self, instruction):
+        self.models["question_answering"] = question_answering_query(self, instruction=instruction)
 
     # shows the names of plots associated with a specific model
     def plot_names(self, model=None):
